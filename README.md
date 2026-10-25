@@ -1,8 +1,21 @@
 # Chordcraft — guitar chord quiz
 
-A small local, client-side app for learning how chord tones change a guitar shape. Built with TypeScript, HTML/CSS, Vite, and Vitest. No backend, account, external fonts, microphone, or audio processing.
+A local-first guitar practice companion with session planning, a repertoire library, practice history, and an interactive chord workshop. Built with TypeScript, HTML/CSS, Vite, and Vitest. No backend, account, external fonts, microphone, or audio processing.
 
 **Website:** [stevetack.github.io/GuitarChordQuiz](https://stevetack.github.io/GuitarChordQuiz/)
+
+## Use after restarting your computer
+
+Bookmark **https://stevetack.github.io/GuitarChordQuiz/** for everyday practice. The hosted app needs no local server. Browser storage persists through normal browser and computer restarts; use the same browser profile and website address to see your records.
+
+To move your existing local practice records to the website:
+
+1. Open the local address you previously used (for example, `http://127.0.0.1:5173/`). If it is unavailable, start it using the commands below.
+2. Click **Export backup** at the bottom of the local app.
+3. Open the hosted website and click **Restore backup**, choosing that downloaded JSON file.
+4. Confirm the restore and check Song Library and History. Use the hosted website from then on.
+
+This is a one-time manual transfer: browser security keeps different website addresses separate. No private song notes or practice history are published to GitHub. Keep a backup before clearing browser/site data; private browsing does not provide durable storage.
 
 ## Run locally
 
@@ -27,9 +40,35 @@ npm run preview      # Serve the production build locally (normally port 4173)
 
 The production preview is at **http://127.0.0.1:4173/GuitarChordQuiz/**. Local development still uses the root URL on port 5173.
 
+Browser integration checks (isolated test storage; do not touch personal browser data):
+
+```powershell
+npx playwright install chromium
+npm run test:ui
+```
+
+These exercise song editing, practice logging, reload/timer persistence, teacher references, random-quiz grading, and desktop/mobile layout. Unit tests cover the original theory plus scheduling, storage validation, and generated questions.
+
 Vite usage: [official guide](https://vite.dev/guide/). Test runner: [Vitest guide](https://vitest.dev/guide/).
 
-## Practice
+## Practice companion
+
+Start on **Today**, choose 15, 30, 45, or 60 minutes, and build a routine. Warmups take about 20%; remaining time prioritizes Learning songs and one or two Learned songs. Every third generated session includes theory or a teacher reference. If a category is empty, its time is redistributed. The first-run library contains the 15 requested songs as Learned and the three requested teacher references; empty libraries after deletion stay empty.
+
+- **Timer:** start, pause, resume, complete early, skip, or swap the current activity. The deadline survives reloads and background tabs. Reaching zero prompts you to complete rather than marking practice automatically. Each next activity starts paused. Changing the duration affects the next routine. Ending a session keeps completed history.
+- **Songs:** add, edit, remove, archive, or log a practice directly. Optional confidence ranges from 1 (rusty) to 5 (solid). Optional song keys guide warmup suggestions; no keys are guessed from titles. Song notes can hold difficult sections, tempo goals, and reminders.
+- **Rotation:** elapsed days divided by a confidence-based interval ranks Learned songs: 2, 4, 7, 14, or 30 days; unrated songs use 3. Never-logged songs are prioritized, with ties rotated using history and the session counter. Completed songs get a new last-practiced date. Skipped or swapped activities do not. Archived songs are excluded from new recommendations.
+- **Warmups:** all five minor pentatonic boxes, diagonal connections, major and natural minor scales, chord transitions, alternate picking, and string skipping. These are textual practice prompts; consult teacher diagrams for fingerings. Relate them to the current learning song when one exists.
+- **Teacher resources:** editable titles, notes, and locations for offline documents. No document upload or automatic access to local files is performed.
+- **History:** completed/skipped activity snapshots, dates, timed duration, and notes survive library edits/removals. Manual song practice records the duration you enter. Quiz answers have zero timed minutes to avoid double-counting a timed theory activity.
+
+## Local data and backups
+
+Data is stored under `chordcraft.practice.v1` in this browser?s local storage. Songs, resources, history, settings, rotation position, and the active routine/timer are persisted. There is no server database or account sync. Localhost and the GitHub Pages website have **separate browser storage**; use Export backup / Restore backup to move data between them or browsers. Clearing browser data removes local records.
+
+Export a JSON backup periodically. Restore validates the schema and asks before replacing current data; the previous raw storage is retained under `chordcraft.practice.v1.before-restore`. Unreadable or newer-version data is not overwritten automatically, and a visible warning explains when saving is unavailable. Existing unrelated local-storage keys are untouched. An update from another open tab reloads the app to use that tab?s saved state.
+
+## Chord workshop
 
 - The starting shape loads automatically. Click one of frets 1–12 to set that string's note. **×** mutes it and **○** plays it open.
 - The diagram has high E at the top and low E at the bottom. Fingering notation reads low E to high E, so `xx0232` is D major. Numbers in the yellow dots are **fret numbers**, not finger numbers.
@@ -37,7 +76,7 @@ Vite usage: [official guide](https://vite.dev/guide/). Test runner: [Vitest guid
 - Keyboard: Tab to a string's active position; arrows move focus between positions/strings; Enter or Space selects. Home focuses mute, End focuses fret 12.
 - Feedback updates immediately: detected chord names, unique note names, numeric pitch classes (C = 0), requested tones, and missing/extra tones. Expand “Notes on each string” for octave and MIDI details.
 - Reset restores the current starting shape. Next cycles through the library; Random chooses a different exercise. The selector jumps directly to an exercise.
-- The solved counter counts unique exercises completed during this page session. Resetting a shape keeps that count; reloading the page starts a new session.
+- The workshop solved counter counts unique questions in the current generated quiz. Resetting a shape keeps that count. Reloading generates new questions; previously solved questions remain in History.
 
 The 18 exercises include all 12 requested transformations, plus Am → A, Am → Am(maj7), A → A6, Am → Am6, D → Dsus2, and D → Dsus4. All ten supported qualities appear as targets.
 
@@ -62,7 +101,11 @@ Per-string octave names use canonical sharp spelling (for example, A#3); chord-t
 | `src/theory/chords.ts` | Interval definitions, spelling, expected sets, matching, comparison |
 | `src/exercises.ts` | Starting shapes and target chord definitions |
 | `src/state.ts` | Immutable editing, reset/load, sequential and random exercise state |
-| `src/main.ts` | DOM rendering, interactions, live feedback, session progress |
+| `src/main.ts` | Companion navigation, forms, session controls, library/history views |
+| `src/practice.ts` | Data types, seeds, routine planning, rotation scoring, timer math, completion |
+| `src/storage.ts` | Versioned storage loading and backup validation |
+| `src/questions.ts` | Random chord transformations from transposed seed shapes |
+| `src/quiz.ts` | Original fretboard UI and live theory feedback, mounted inside the companion |
 | `src/style.css` | Responsive layout and fretboard appearance |
 | `tests/` | Theory, known shapes, alternate voicings, ambiguities, exercise/state tests |
 

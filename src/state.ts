@@ -1,4 +1,4 @@
-import { EXERCISES } from './exercises';
+import { EXERCISES, type Exercise } from './exercises';
 import { DISPLAY_FRETS, type StringPosition } from './theory/guitar';
 
 export interface QuizState {
@@ -6,9 +6,9 @@ export interface QuizState {
   readonly fingering: readonly StringPosition[];
 }
 
-export function loadExercise(index: number): QuizState {
-  if (!Number.isInteger(index) || index < 0 || index >= EXERCISES.length) throw new RangeError('Unknown exercise.');
-  return { exerciseIndex: index, fingering: [...EXERCISES[index].startingFingering] };
+export function loadExercise(index: number, exercises: readonly Exercise[] = EXERCISES): QuizState {
+  if (!Number.isInteger(index) || index < 0 || index >= exercises.length) throw new RangeError('Unknown exercise.');
+  return { exerciseIndex: index, fingering: [...exercises[index].startingFingering] };
 }
 
 export function setPosition(state: QuizState, stringIndex: number, position: StringPosition): QuizState {
@@ -17,11 +17,11 @@ export function setPosition(state: QuizState, stringIndex: number, position: Str
   return { ...state, fingering: state.fingering.map((old, index) => index === stringIndex ? position : old) };
 }
 
-export function nextExercise(state: QuizState): QuizState {
-  return loadExercise((state.exerciseIndex + 1) % EXERCISES.length);
+export function nextExercise(state: QuizState, exercises: readonly Exercise[] = EXERCISES): QuizState {
+  return loadExercise((state.exerciseIndex + 1) % exercises.length, exercises);
 }
 
-export function randomExercise(state: QuizState, random = Math.random): QuizState {
-  const offset = 1 + Math.floor(random() * (EXERCISES.length - 1));
-  return loadExercise((state.exerciseIndex + offset) % EXERCISES.length);
+export function randomExercise(state: QuizState, random = Math.random, exercises: readonly Exercise[] = EXERCISES): QuizState {
+  const offset = 1 + Math.floor(random() * (exercises.length - 1));
+  return loadExercise((state.exerciseIndex + offset) % exercises.length, exercises);
 }
